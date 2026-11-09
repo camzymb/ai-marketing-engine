@@ -4,6 +4,9 @@
 !.env.example
 *.key
 *.pem
+credentials.json
+service-account*.json
+client_secret*.json
 
 # Built locally from your .env and context file (they contain your settings)
 agents/built/

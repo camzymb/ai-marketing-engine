@@ -39,7 +39,9 @@ Each service is a **processor** that handles data for you. Under GDPR Article 28
 
 - **IP addresses are personal data.** In *Breyer* (C-582/14, 2016) the EU Court said a dynamic IP address can be personal data [13]. In 2022 a Munich court awarded damages because a website loaded Google Fonts from Google's servers, which sent visitors' IP addresses to Google without consent (LG München I, 3 O 17493/20) [14].
 - **Host fonts and scripts yourself,** and load YouTube, maps and other embeds only after a click.
-- **Ask before analytics cookies.** Norway has required GDPR-level consent for cookies since 1 January 2025 [15]. Load GA4 only after the visitor agrees.
+- **Ask before analytics cookies.** Norway has required GDPR-level consent for cookies since 1 January 2025 [15]. Load GA4 only after the visitor agrees, make Decline as easy as Accept, and let people change their mind later. Accept Google's data processing terms in the Analytics admin, and switch off ads features and Google signals if you don't need them.
+- **Only note a lead's channel with consent.** The source a form sends to the Lead Loop (a UTM tag or the referring site) comes from the visit, so collect it only after the visitor accepted analytics, and say so in your privacy notice.
+- **The weekly overview holds no personal data.** It reads counts from Google Analytics, Search Console and HubSpot and writes counts to Notion and the email. No names or messages leave HubSpot.
 - **Protect your public form** with a honeypot or bot check and length limits, and keep a spend limit on the API key behind it.
 
 ## Email outreach

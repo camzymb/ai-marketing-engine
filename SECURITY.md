@@ -9,6 +9,8 @@ This project calls paid APIs and handles other people's contact details, so a fe
 - **n8n keeps keys in its own encrypted credential store.** An exported workflow only refers to a credential by name. Never paste a key into a node.
 - **Use one key per tool** (one for the demo, one for n8n), with a short expiry and a spend limit on the workspace. Then a leaked key is cheap and easy to switch off.
 - **Least privilege.** The HubSpot service key needs only `crm.objects.contacts.read`, `crm.objects.contacts.write` and `crm.schemas.contacts.read`.
+- **The Google service account only reads.** Give it Viewer in Google Analytics and Restricted in Search Console, nothing more. Its JSON key file is a password: paste it into n8n, then delete the file. Never commit it. `.gitignore` blocks files named `credentials.json`, `service-account*.json` and `client_secret*.json`.
+- **The Notion integration** only sees the one database you share with it.
 
 ## 2. Before you push a fork
 
@@ -36,6 +38,7 @@ Deleting a file in a new commit does **not** remove it from the history. Scanner
 | **Running up your bill** (denial of wallet) | Someone floods your public form or pastes huge messages | Every field is cleaned and length-capped before it reaches Claude. Put a spend limit on the API workspace, and add a honeypot or captcha to your website form. |
 | **Too much power for the AI** (excessive agency) | An agent sends emails or changes records on its own | No agent can send, post, buy or delete. They only draft. n8n writes to HubSpot with a contacts-only key, and alerts go only to you. |
 | **Leaking private data in prompts** | Customer data ends up in logs, prompts or the repo | Agents get one lead at a time and keep nothing between runs. Test leads use `example.com`, a domain reserved for examples. Run outputs are git-ignored. |
+| **Public form webhook** | Someone finds the website form address in your site's code and floods it | Only your site's address may post to it from a browser. Calls without a real-looking email and a message are dropped before Claude, and every field is length-capped. Keep a spend limit on the API key. |
 | **Local demo exposed** | Someone on your network reads files through the demo server | The demo server listens only on `127.0.0.1` and serves only the dashboard page. |
 | **Supply chain** | A malicious package sneaks in, or an AI suggests a package name that doesn't exist and an attacker registers it | The scripts use only Node and Python built-ins, so there are no packages to install. Playwright is needed only to record videos. Before you add a package, check that it's real and well used. |
 | **Open webhooks** | Anyone who finds your n8n webhook URL can trigger it | Turn on webhook authentication (Basic, Header or JWT) where the trigger allows it. If you self-host n8n, keep it updated, since older versions had serious security holes, for example CVE-2026-21858, fixed in 1.121.0. |

@@ -15,13 +15,13 @@ Each new lead runs through the same steps.
 
 Nothing is ever sent to the lead automatically. You always read the draft first.
 
-## A. Add four custom fields in HubSpot (10 minutes)
+## A. Add six custom fields in HubSpot (10 minutes)
 
 These fields hold what the agent writes about each lead.
 
 1. In your test HubSpot account, click the **gear icon** (Settings).
 2. Go to **Data Management → Properties**, make sure **Contact properties** is selected, then click **Create property**.
-3. Create these four fields, one at a time.
+3. Create these six fields, one at a time.
 
 | Label (type it exactly) | Field type |
 | --- | --- |
@@ -29,8 +29,12 @@ These fields hold what the agent writes about each lead.
 | AI lead band | Single-line text |
 | AI lead summary | Multi-line text |
 | AI reply draft | Multi-line text |
+| Lead channel | Single-line text |
+| Lead source detail | Single-line text |
 
-4. When you create each field, check that HubSpot shows the internal name as `ai_lead_score`, `ai_lead_band`, `ai_lead_summary` and `ai_reply_draft`. The workflow uses those exact names.
+4. When you create each field, check that HubSpot shows the internal name as `ai_lead_score`, `ai_lead_band`, `ai_lead_summary`, `ai_reply_draft`, `lead_channel` and `lead_source_detail`. The workflow uses those exact names.
+
+The last two hold where the lead came from, like LinkedIn or an AI assistant. The weekly overview uses them to show which channels bring hot leads.
 
 ## B. Make a HubSpot service key (5 minutes)
 
@@ -90,3 +94,25 @@ Open `test-leads-answer-key.csv` next to the n8n results.
 - Take a screenshot of one hot lead's alert email.
 - Take a screenshot of the HubSpot contact list showing the AI lead band column.
 - Check the cost in Claude Console → Usage. It should be about one cent for all 20 leads.
+
+## H. Connect your own website's form
+
+The workflow's **Website form** box is a webhook: an address your site's contact form can send a copy of each enquiry to.
+
+1. In `.env`, set `SITE_ORIGIN=https://yourdomain.com`. Only your site may send to the webhook from a browser.
+2. Run `python scripts/build.py` again and import the new `n8n/lead-loop.json`. The build prints the webhook path and saves it in `.env`, so it stays the same.
+3. In n8n, open **Website form** and copy the **Production URL**. Turn the workflow on.
+4. In your site's form code, after the message has been sent the usual way, also `POST` this JSON to that URL:
+   ```json
+   {
+     "answers": { "Name": "", "Email": "", "Brand or company": "", "Website or social link": "", "Message": "",
+                  "Services interested in": "", "Package interested in": "", "When to start": "", "How they heard": "" },
+     "source": "linkedin", "medium": "social", "campaign": "", "landing": "/services", "page": "/contact"
+   }
+   ```
+   Only Email and Message are required. Send `source`, `medium` and `campaign` from the visit's UTM tag or referring site, and only if the visitor accepted analytics.
+5. Send one test from your site and check that the contact appears in HubSpot with a Lead channel.
+
+Keep your normal email delivery as well. If n8n is ever down, no message is lost.
+
+The webhook address ends up in your site's public code, so anyone could call it. The **Website to lead** box drops any call without a real-looking email and a message before it reaches Claude. Keep a spend limit on your Claude API key too.

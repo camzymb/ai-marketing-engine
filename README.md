@@ -48,6 +48,10 @@ Contact form ─► Prepare lead ─► Lead agent (Haiku 5.5) ─► Read answe
 
 Nothing is sent to a lead automatically. The reply draft waits in HubSpot and in the alert email until a person sends it.
 
+## The weekly overview
+
+Every Monday, or whenever you click run, a third workflow reads last week's visits by channel from Google Analytics, your searches from Search Console and your new leads from HubSpot. It joins them by channel, so you can see which channels bring the leads that score hot, including visits from AI assistants like ChatGPT and Perplexity. Claude writes a few plain-English sentences on what changed. The overview is saved as a Notion page, and you get an email with the link. It holds counts only, never names or messages. Setup: [docs/weekly-overview-setup.md](docs/weekly-overview-setup.md).
+
 ## Test results (made-up leads)
 
 These come from 20 made-up test leads in English, German and Norwegian, with an answer key. They show how the system behaves, not how a market behaves.
@@ -71,7 +75,7 @@ node demo/server.js --mock         # dry run with no API calls, open http://127.
 node demo/server.js                # real run on the 20 test leads (costs about $0.02)
 ```
 
-To use it with real leads, import `n8n/lead-loop.json` into n8n and follow [docs/lead-loop-setup.md](docs/lead-loop-setup.md).
+To use it with real leads, import `n8n/lead-loop.json` into n8n and follow [docs/lead-loop-setup.md](docs/lead-loop-setup.md). For the weekly overview, import `n8n/weekly-overview.json` and follow [docs/weekly-overview-setup.md](docs/weekly-overview-setup.md).
 
 To run the Demand Engine, copy `demand-engine/evidence/template.md` to `demand-engine/evidence/my-evidence.md`, fill it in, then run:
 
