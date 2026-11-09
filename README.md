@@ -54,7 +54,7 @@ The SEO agent picks the words buyers search for (from your Search Console export
 
 ## The weekly overview
 
-Every Monday, or whenever you click run, a third workflow reads last week's visits by channel from Google Analytics, your searches from Search Console and your new leads from HubSpot. It joins them by channel, so you can see which channels bring the leads that score hot, including visits from AI assistants like ChatGPT and Perplexity. Claude writes a few plain-English sentences on what changed. The overview is saved as a Notion page, and you get an email with the link. It holds counts only, never names or messages. Setup: [docs/weekly-overview-setup.md](docs/weekly-overview-setup.md).
+Every Monday, or whenever you click run, a third workflow reads last week's visits by channel from Google Analytics, your searches from Search Console and your new leads from HubSpot. It joins them by channel, so you can see which channels bring the leads that score hot, including visits from AI assistants like ChatGPT and Perplexity. Claude writes a few plain-English sentences on what changed. The overview is saved as a Notion page, and you get an email with the link. It also suggests the words and questions to use this week on your website and in the posts you write yourself, each with a source the workflow checks. It holds counts only, never names or messages. Setup: [docs/weekly-overview-setup.md](docs/weekly-overview-setup.md).
 
 ## Test results (made-up leads)
 

@@ -7,7 +7,8 @@ The weekly overview answers the question small teams rarely get answered: **whic
 3. Reads last week's new leads from **HubSpot**, with the channel and score band the Lead Loop saved on each
 4. Joins them by channel. LinkedIn, search engines, AI assistants like ChatGPT and Perplexity, email and direct visits each get one row.
 5. Asks Claude for a few plain-English sentences about what changed
-6. Saves the overview as a page in **Notion** and emails you a short version with the link
+6. Picks **words for this week**: 3 to 8 words or questions to use on your website and in the posts you write yourself on LinkedIn, Instagram, Facebook or TikTok, each marked SEO, AEO or GEO, with an idea and where to use it
+7. Saves the overview as a page in **Notion** and emails you a short version with the link
 
 The overview holds counts only, never names or messages. So no personal data goes to Notion or into the email.
 
@@ -82,6 +83,16 @@ If Google says key creation is turned off for your organisation, an admin has to
 5. Turn the workflow **on** (top right) so it runs every Monday at 8.
 
 A source that isn't connected yet doesn't stop the run. It shows up under **Missing this week** in the overview, with the error, so you know what to fix. A new site has little data in its first weeks, and the summary says so instead of guessing.
+
+## Where the words for this week come from
+
+Every word idea shows its source, and the workflow checks that source itself instead of trusting the AI:
+
+- **Rising search** or **Search**: the phrase is in your own Search Console data for that week. Rising means it's new, or shown at least one and a half times as often as the week before.
+- **Demand Engine plan**: the phrase is in the SEO agent's words to use, or the AEO and GEO agent's buyer questions, from your latest run (the date is shown).
+- **Claude's own idea, not found in your data**: shown last, so you can judge it yourself.
+
+These are your own search data and your plan, not social media trend lists. Google's official Trends API is still in a limited test, and the platforms don't offer a simple free trends feed, so check each platform's own trends before you post. The words get better as Search Console collects data and you run the Demand Engine again each month.
 
 ## How channels are decided
 

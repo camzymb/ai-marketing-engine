@@ -354,6 +354,20 @@ workflow = {"name": "Lead Loop", "nodes": nodes, "connections": connections,
 # joins them by channel, asks Claude for a short summary, saves the page in Notion and emails you.
 # It holds counts only, never names or messages, so no personal data goes to Notion or the email.
 # ---------------------------------------------------------------------------------------------
+# The latest Demand Engine plan, so the weekly word ideas build on it: the SEO agent's "words to use"
+# and the AEO and GEO agent's buyer questions. Each is kept with the date of the run it came from.
+def latest_section(agent, heading):
+    runs = sorted((ROOT / "demand-engine" / "runs").glob(f"*/{agent}-out.md"))
+    if not runs:
+        return "", ""
+    text = runs[-1].read_text(encoding="utf-8")
+    i = text.lower().find(heading)
+    return (text[i:i + 3000] if i >= 0 else ""), runs[-1].parent.name
+PLAN_WORDS, PLAN_WORDS_DATE = latest_section("seo", "words to use")
+PLAN_QUESTIONS, PLAN_QUESTIONS_DATE = latest_section("aeo", "make it citable")
+if cfg.get("WORDS_FILE") and (ROOT / cfg["WORDS_FILE"]).exists():
+    PLAN_WORDS, PLAN_WORDS_DATE = (ROOT / cfg["WORDS_FILE"]).read_text(encoding="utf-8")[:3000], "your words file"
+
 OVERVIEW_SYSTEM = (ROOT / "agents" / "overview.md").read_text(encoding="utf-8").replace("{{OWNER_NAME}}", OWNER).replace("{{CONTEXT}}", context)
 SC_ENC = urllib.parse.quote(SEARCH_CONSOLE_SITE, safe="")
 LINKS = {
@@ -372,6 +386,7 @@ return [{ json: {
   prevStart: iso(today - 14 * day), prevEnd: iso(today - 8 * day),
   // Search Console data arrives 2 to 3 days late, so its week ends 3 days ago.
   scStart: iso(today - 9 * day), scEnd: iso(today - 3 * day),
+  scPrevStart: iso(today - 16 * day), scPrevEnd: iso(today - 10 * day),
   startMs: today - 7 * day, prevStartMs: today - 14 * day,
 } }];
 """
@@ -440,7 +455,18 @@ const scOk = !failed(scTot, 'Search Console');
 const scRow = scOk ? (scTot.rows || [])[0] || { clicks: 0, impressions: 0, position: 0 } : null;
 const scQ = scOk ? get('Search Console searches') : null;
 const topSearches = scOk && scQ && !scQ.error
-  ? (scQ.rows || []).map((r) => ({ query: r.keys[0], clicks: r.clicks, impressions: r.impressions, position: Math.round(r.position * 10) / 10 }))
+  ? (scQ.rows || []).slice(0, 10).map((r) => ({ query: r.keys[0], clicks: r.clicks, impressions: r.impressions, position: Math.round(r.position * 10) / 10 }))
+  : [];
+// Searches rising for you: new this week, or shown clearly more often than the week before.
+const scPrev = scOk ? get('Search Console searches week before') : null;
+const before = {};
+if (scPrev && !scPrev.error) for (const r of scPrev.rows || []) before[r.keys[0]] = r.impressions;
+const risingSearches = scOk && scQ && !scQ.error
+  ? (scQ.rows || [])
+      .map((r) => ({ query: r.keys[0], shown: r.impressions, shownBefore: before[r.keys[0]] || 0, clicks: r.clicks }))
+      .filter((r) => r.shown - r.shownBefore >= 2 && (r.shownBefore === 0 || r.shown >= r.shownBefore * 1.5))
+      .sort((a, b) => (b.shown - b.shownBefore) - (a.shown - a.shownBefore))
+      .slice(0, 8)
   : [];
 
 // Top landing pages.
@@ -464,6 +490,9 @@ return [{ json: {
   aiAssistants: { visits: ai.visits, leads: ai.leads, hot: ai.hot },
   search: scRow ? { clicks: scRow.clicks, impressions: scRow.impressions, position: Math.round((scRow.position || 0) * 10) / 10, from: D.scStart, to: D.scEnd } : null,
   topSearches,
+  risingSearches,
+  allSearches: scOk && scQ && !scQ.error ? (scQ.rows || []).map((r) => r.keys[0]) : [],
+  scRange: { from: D.scStart, to: D.scEnd, prevFrom: D.scPrevStart, prevTo: D.scPrevEnd },
   topPages,
   notes,
   links: LINKS,
@@ -472,20 +501,50 @@ return [{ json: {
 
 summary_req_js = f"""// Ask Claude for the short summary at the top of the page.
 const f = $json;
-const facts = {{ week: f.week, totals: f.totals, channels: f.channels, aiAssistants: f.aiAssistants, search: f.search, topSearches: f.topSearches, topPages: f.topPages, notes: f.notes }};
+const facts = {{ week: f.week, totals: f.totals, channels: f.channels, aiAssistants: f.aiAssistants, search: f.search, topSearches: f.topSearches, risingSearches: f.risingSearches, topPages: f.topPages, notes: f.notes }};
+const planWords = {json.dumps(PLAN_WORDS)};
+const planQuestions = {json.dumps(PLAN_QUESTIONS)};
 return [{{ json: {{ body: {{
   model: 'claude-haiku-5-5',
-  max_tokens: 2000,
+  max_tokens: 3000,
   system: {json.dumps(OVERVIEW_SYSTEM)},
-  messages: [{{ role: 'user', content: 'Last week\\'s numbers:\\n' + JSON.stringify(facts, null, 2) }}],
+  messages: [{{ role: 'user', content: 'Last week\\'s numbers:\\n' + JSON.stringify(facts, null, 2) + '\\n\\nWords to use from the latest Demand Engine plan (SEO agent):\\n' + (planWords || 'none yet') + '\\n\\nBuyer questions from the latest Demand Engine plan (AEO and GEO agent):\\n' + (planQuestions || 'none yet') }}],
 }} }} }}];
 """
 
 page_js = r"""// Notion page and email: the summary on top, then the tables, then where to look next.
 const f = $('Put it together').first().json;
 const resp = $json || {};
-let summary = ((resp.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('')).trim();
+const raw = ((resp.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('')).trim();
+// The agent answers in JSON (summary + word ideas). If that fails, the text is used as the summary.
+let answer = null;
+try { answer = JSON.parse(raw); } catch (e) {
+  const m = raw.match(/\{[\s\S]*\}/);
+  if (m) { try { answer = JSON.parse(m[0]); } catch (e2) { answer = null; } }
+}
+let summary = String((answer && answer.summary) || (answer ? '' : raw)).trim();
 if (!summary) summary = 'The summary could not be written this week, but the numbers below are complete.';
+// Every word gets a source the code checks itself, not one the AI claims: is the phrase really in
+// this week's searches, or in the Demand Engine plan? If neither, it is labelled as Claude's own idea.
+const PLAN = { words: __PLAN_WORDS__, wordsDate: __PLAN_WORDS_DATE__, questions: __PLAN_QUESTIONS__, questionsDate: __PLAN_QUESTIONS_DATE__ };
+const norm = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9\u00c0-\u024f]+/g, ' ').trim();
+const tokens = (x) => norm(x).split(' ').filter((t) => t.length > 2);
+const inText = (phrase, text) => { const t = tokens(phrase); const n = ' ' + norm(text) + ' '; return t.length > 0 && t.every((k) => n.includes(' ' + k + ' ') || n.includes(' ' + k)); };
+const rising = new Set(f.risingSearches.map((r) => r.query));
+const sourceOf = (phrase) => {
+  const hit = f.allSearches.find((q) => inText(phrase, q) || inText(q, phrase));
+  if (hit) return { label: `${rising.has(hit) ? 'Rising search' : 'Search'} "${hit}" in Search Console, ${f.scRange.from} to ${f.scRange.to}`, link: f.links.searchConsole, data: true };
+  if (inText(phrase, PLAN.words)) return { label: `Demand Engine plan, SEO agent (run ${PLAN.wordsDate})`, data: true };
+  if (inText(phrase, PLAN.questions)) return { label: `Demand Engine plan, AEO and GEO agent (run ${PLAN.questionsDate})`, data: true };
+  return { label: "Claude's own idea, not found in your data", data: false };
+};
+const FOR = { seo: 'SEO (Google results)', aeo: 'AEO (answer boxes, Google AI Overviews)', geo: 'GEO (AI chatbots)' };
+const words = (answer && Array.isArray(answer.words) ? answer.words : []).slice(0, 8).map((w) => ({
+  phrase: String(w.phrase || '').slice(0, 80), why: String(w.why || '').slice(0, 200),
+  idea: String(w.idea || '').slice(0, 300), where: String(w.where || '').slice(0, 120),
+  for: FOR[String(w.for || '').toLowerCase()] || 'SEO (Google results)',
+})).filter((w) => w.phrase).map((w) => ({ ...w, source: sourceOf(w.phrase) }))
+  .sort((a, b) => Number(b.source.data) - Number(a.source.data));
 summary = summary.replace(/—/g, ',');
 
 const txt = (s, link) => ({ type: 'text', text: { content: String(s).slice(0, 1900), link: link ? { url: link } : null } });
@@ -515,6 +574,16 @@ if (f.search) {
   blocks.push(para(`From ${f.search.from} to ${f.search.to}, the site showed up ${f.search.impressions} times in Google and got ${f.search.clicks} clicks, at an average position of ${f.search.position}.`));
   if (f.topSearches.length) blocks.push(table(['Search', 'Clicks', 'Shown', 'Position'], f.topSearches.map((q) => [q.query, q.clicks, q.impressions, q.position])));
 } else blocks.push(para('Search Console is not connected yet.'));
+if (f.risingSearches.length) {
+  blocks.push(h2('Searches rising for you'));
+  blocks.push(table(['Search', 'Shown this week', 'Shown the week before', 'Clicks'], f.risingSearches.map((r) => [r.query, r.shown, r.shownBefore, r.clicks])));
+}
+blocks.push(h2('Words for this week'));
+if (words.length) {
+  blocks.push(para('Words and phrases to use on your website and in the posts you write yourself, with an idea for each. They come from the searches that found you and your Demand Engine plan, not from social media trend lists, so check each platform\'s own trends too.'));
+  blocks.push(table(['Words', 'For', 'Why now', 'Source', 'Idea', 'Where to use it'], words.map((w) => [w.phrase, w.for, w.why, w.source.label, w.idea, w.where])));
+  blocks.push(para(`Sources: your Google searches from Search Console (${f.scRange.from} to ${f.scRange.to}, compared with ${f.scRange.prevFrom} to ${f.scRange.prevTo})` + (PLAN.wordsDate ? `, and the Demand Engine plan from ${PLAN.wordsDate}` : '') + '. The source column is checked by the workflow itself, not written by the AI.', f.links.searchConsole));
+} else blocks.push(para('No word ideas this week. They need search data from Search Console or a Demand Engine plan.'));
 if (f.topPages.length) {
   blocks.push(h2('Pages people landed on'));
   for (const p of f.topPages) blocks.push(bullet(`${p.page}: ${p.visits} visits`));
@@ -538,11 +607,12 @@ const emailHtml = `<div style="font-family:Arial,sans-serif;font-size:15px;line-
 <p style="font-size:13px;color:#6b655c;margin:0 0 4px">${esc(f.title)}</p>
 ${summary.split(/\n\s*\n/).map((p) => `<p>${esc(p.trim())}</p>`).join('')}
 <table style="border-collapse:collapse;margin:8px 0 16px"><tr><th ${td}>Channel</th><th ${td}>Visits</th><th ${td}>Leads</th><th ${td}>Hot</th></tr>${rowsHtml}<tr><td ${td}><b>Total</b></td><td ${td}><b>${T.visits}</b></td><td ${td}><b>${T.leads}</b></td><td ${td}><b>${T.hot}</b></td></tr></table>
+${words.length ? `<p style="margin:16px 0 6px"><b>Words for this week</b></p><ul style="margin:0 0 16px;padding-left:20px">${words.slice(0, 5).map((w) => `<li><b>${esc(w.phrase)}</b>: ${esc(w.idea)} <span style="color:#6b655c">(${esc(w.where)}. Source: ${esc(w.source.label)})</span></li>`).join('')}</ul>` : ''}
 <p><a href="%NOTION_URL%">Open the full overview in Notion</a></p>
 <p style="font-size:13px;color:#6b655c">Or go straight to <a href="${f.links.hubspot}">HubSpot</a>, <a href="${f.links.ga4}">Google Analytics</a> or <a href="${f.links.searchConsole}">Search Console</a>.</p>
 </div>`;
 return [{ json: { notion, emailHtml, subject: `Your week: ${T.visits} visits, ${T.leads} leads, ${T.hot} hot (${f.title})` } }];
-""".replace("__DB__", json.dumps(NOTION_DATABASE_ID))
+""".replace("__DB__", json.dumps(NOTION_DATABASE_ID)).replace("__PLAN_WORDS__", json.dumps(PLAN_WORDS)).replace("__PLAN_WORDS_DATE__", json.dumps(PLAN_WORDS_DATE)).replace("__PLAN_QUESTIONS__", json.dumps(PLAN_QUESTIONS)).replace("__PLAN_QUESTIONS_DATE__", json.dumps(PLAN_QUESTIONS_DATE))
 
 google_http = lambda name, pos, url, body: {
     "id": nid(), "name": name, "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
@@ -571,7 +641,10 @@ ov_nodes = [
         "={{ JSON.stringify({ startDate: " + D + ".scStart, endDate: " + D + ".scEnd }) }}"),
     google_http("Search Console searches", [1100, 100],
         f"https://www.googleapis.com/webmasters/v3/sites/{SC_ENC}/searchAnalytics/query",
-        "={{ JSON.stringify({ startDate: " + D + ".scStart, endDate: " + D + ".scEnd, dimensions: ['query'], rowLimit: 10 }) }}"),
+        "={{ JSON.stringify({ startDate: " + D + ".scStart, endDate: " + D + ".scEnd, dimensions: ['query'], rowLimit: 50 }) }}"),
+    google_http("Search Console searches week before", [1210, 260],
+        f"https://www.googleapis.com/webmasters/v3/sites/{SC_ENC}/searchAnalytics/query",
+        "={{ JSON.stringify({ startDate: " + D + ".scPrevStart, endDate: " + D + ".scPrevEnd, dimensions: ['query'], rowLimit: 100 }) }}"),
     {"id": nid(), "name": "HubSpot leads", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2,
      "position": [1320, 100], "onError": "continueRegularOutput", "alwaysOutputData": True,
      "parameters": {
@@ -617,7 +690,7 @@ ov_nodes = [
          "options": {"appendAttribution": False},
      }},
 ]
-order = ["Dates", "GA4 visits by channel", "GA4 top landing pages", "Search Console totals", "Search Console searches",
+order = ["Dates", "GA4 visits by channel", "GA4 top landing pages", "Search Console totals", "Search Console searches", "Search Console searches week before",
          "HubSpot leads", "Put it together", "Summary request", "Overview agent (Haiku 5.5)", "Notion page and email",
          "Save in Notion", "Email the overview"]
 ov_conn = {"Every Monday at 8": {"main": [[conn("Dates")]]}, "Run the overview now": {"main": [[conn("Dates")]]}}
