@@ -1,0 +1,21 @@
+Lead,Name,Company,Expected score,Expected band,Why
+1,Ingrid Solberg,Nordlys Robotics,100,hot,"Decision maker, ideal size, listed service, budget and start date, robotics, Norway"
+2,Lukas Brunner,Alpwerk AI,85,hot,"Co-founder, ideal size, listed service, AI, Switzerland, no budget given"
+3,Maja Lindqvist,Fjell Skincare,50,warm,"Not a decision maker, ideal size, listed service, Europe"
+4,Tobias Meier,Kessel Biotech,100,hot,"CTO, ideal size, website launch, timeline, biotech, Switzerland"
+5,Sara Haugen,BI Norwegian Business School,1,cold,Student asking for free help
+6,Mark Stevens,RankBoost Pro,0,spam,Unrelated sales pitch
+7,Alex Chen,MoonToken,0,spam,Crypto promotion pitch
+8,Emil Dahl,,1,cold,Job seeker
+9,Erik Nilsen,Havbris Seafood Export,55,warm,"Founder, listed service, Norway, but bigger than ideal size and not tech"
+10,Hilde Moen,Byggpartner AS,1,cold,Event planning is not offered
+11,Anna Rossi,TransEuropa Logistics Group,1,cold,"Decision maker, but over 200 people and asks for a full agency team, which isn't offered (key changed from 35 on 9 Nov 2026)"
+12,Jonas Favre,LacCloud AI,100,hot,"Founder, ideal size, website launch, budget and date, AI, Switzerland"
+13,Nora Berg,Nora Berg Foto,30,cold,"Small business but a partnership pitch, not a client request"
+14,Kari Lunde,Løkka Kaffebar,75,hot,"Owner, ideal size, monthly social content, Norway"
+15,Chris,,1,cold,"No company, role or need given"
+16,Linda Parker,,0,spam,Link-dropping
+17,Daniel Okafor,DataLoom,100,hot,"Marketing lead, ideal size, AI automation, timeline, SaaS, Europe"
+18,Priya Nair,HelvaMed,60,warm,"Not the decision maker, ideal size, listed service, medtech, Switzerland"
+19,Per Aas,Aas Bilverksted,25,cold,Asks for a service not offered
+20,Ole Brekke,FjordBots,65,warm,"CEO, ideal size, robotics, Norway, but no service asked for yet"

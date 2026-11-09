@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1080">
+<title>Lead Loop · live run</title>
+<style>
+  :root {
+    --bg: #070b1f; --card: rgba(255,255,255,0.055); --line: rgba(255,255,255,0.12);
+    --ink: #f3f4fb; --quiet: #a9afc7; --accent: #8fb4ff;
+    --hot: #ff7a59; --warm: #f5c451; --cold: #6aa9ff; --spam: #8a8fa3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1920px; overflow: hidden; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-image:
+      radial-gradient(1.5px 1.5px at 8% 12%, #fff8 50%, transparent 51%),
+      radial-gradient(1px 1px at 22% 30%, #fff6 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 41% 7%, #fff7 50%, transparent 51%),
+      radial-gradient(1px 1px at 63% 18%, #fff5 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 82% 9%, #fff8 50%, transparent 51%),
+      radial-gradient(1px 1px at 92% 34%, #fff5 50%, transparent 51%),
+      radial-gradient(1px 1px at 12% 62%, #fff4 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 74% 71%, #fff5 50%, transparent 51%),
+      radial-gradient(1px 1px at 35% 88%, #fff4 50%, transparent 51%),
+      radial-gradient(1px 1px at 88% 93%, #fff5 50%, transparent 51%),
+      radial-gradient(ellipse at 50% -10%, #1b2a6b 0%, transparent 60%);
+    padding: 64px 56px;
+  }
+  header h1 { font-size: 54px; font-weight: 700; letter-spacing: -0.5px; }
+  header p { font-size: 28px; color: var(--quiet); margin-top: 10px; }
+  .badge { display: inline-block; font-size: 22px; font-weight: 700; padding: 6px 16px; border-radius: 999px; margin-left: 14px; vertical-align: middle; border: 2px solid var(--accent); color: var(--accent); }
+  .badge.mock { border-color: var(--warm); color: var(--warm); }
+  .progress { margin-top: 36px; }
+  .progress .row { display: flex; justify-content: space-between; font-size: 28px; color: var(--quiet); }
+  .progress .row b { color: var(--ink); }
+  .bar { height: 14px; background: var(--line); border-radius: 999px; margin-top: 14px; overflow: hidden; }
+  .bar > div { height: 100%; width: 0; background: var(--accent); border-radius: 999px; transition: width .4s ease; }
+  .counts { display: flex; gap: 16px; margin-top: 22px; }
+  .count { flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px 18px; }
+  .count .n { font-size: 46px; font-weight: 700; }
+  .count .l { font-size: 22px; color: var(--quiet); }
+  .count.hot .n { color: var(--hot); } .count.warm .n { color: var(--warm); } .count.cold .n { color: var(--cold); } .count.spam .n { color: var(--spam); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 28px; padding: 30px 34px; margin-top: 28px; }
+  .card h2 { font-size: 24px; text-transform: uppercase; letter-spacing: 2px; color: var(--quiet); font-weight: 600; margin-bottom: 14px; }
+  .who { font-size: 38px; font-weight: 700; }
+  .meta { font-size: 26px; color: var(--quiet); margin-top: 6px; }
+  .msg { font-size: 30px; line-height: 1.4; margin-top: 18px; }
+  .stream { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 22px; line-height: 1.45; color: #c9d4ff; height: 290px; overflow: hidden; white-space: pre-wrap; word-break: break-word; display: flex; flex-direction: column; justify-content: flex-end; }
+  .think { color: #e9ddb0; font-family: -apple-system, "Segoe UI", Inter, Roboto, Arial, sans-serif; font-size: 25px; font-style: italic; }
+  .cursor { display: inline-block; width: 12px; height: 26px; background: var(--accent); vertical-align: -4px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .result-top { display: flex; align-items: center; gap: 24px; }
+  .band { font-size: 40px; font-weight: 800; padding: 10px 28px; border-radius: 18px; text-transform: uppercase; letter-spacing: 2px; background: var(--line); }
+  .band.hot { background: var(--hot); color: #1a0d08; } .band.warm { background: var(--warm); color: #1d1604; }
+  .band.cold { background: var(--cold); color: #06142b; } .band.spam { background: var(--spam); color: #101218; }
+  .score { font-size: 64px; font-weight: 800; }
+  .score small { font-size: 28px; color: var(--quiet); font-weight: 500; }
+  .reasons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .chip { font-size: 22px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); color: var(--quiet); }
+  .chip.plus { color: #9be3b4; border-color: #9be3b455; } .chip.minus { color: #ff9b9b; border-color: #ff9b9b55; }
+  .draft { font-size: 27px; line-height: 1.45; margin-top: 20px; min-height: 230px; max-height: 330px; overflow: hidden; white-space: pre-wrap; }
+  .draft .label { display: block; font-size: 22px; color: var(--quiet); margin-bottom: 8px; }
+  footer { position: absolute; left: 56px; right: 56px; bottom: 54px; display: flex; justify-content: space-between; font-size: 24px; color: var(--quiet); }
+  .final { position: absolute; inset: 0; background: rgba(7,11,31,0.92); display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 80px; }
+  .final.show { display: flex; }
+  .final .big { font-size: 96px; font-weight: 800; line-height: 1.05; }
+  .final .sub { font-size: 36px; color: var(--quiet); margin-top: 28px; line-height: 1.4; }
+  .final .stats { display: flex; gap: 22px; margin-top: 50px; }
+  .final .stat { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 26px 30px; min-width: 260px; }
+  .final .stat .n { font-size: 56px; font-weight: 800; }
+  .final .stat .l { font-size: 24px; color: var(--quiet); margin-top: 6px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Lead Loop <span id="mode" class="badge">REAL API RUN</span></h1>
+    <p>Lead agent · Claude Haiku 5.5 · 20 made-up test leads · <span id="date"></span></p>
+  </header>
+
+  <section class="progress">
+    <div class="row"><span>Lead <b id="idx">0</b> of <b id="total">20</b></span><span><b id="elapsed">0.0</b> s · $<b id="cost">0.0000</b></span></div>
+    <div class="bar"><div id="bar"></div></div>
+    <div class="counts">
+      <div class="count hot"><div class="n" id="c-hot">0</div><div class="l">hot</div></div>
+      <div class="count warm"><div class="n" id="c-warm">0</div><div class="l">warm</div></div>
+      <div class="count cold"><div class="n" id="c-cold">0</div><div class="l">cold</div></div>
+      <div class="count spam"><div class="n" id="c-spam">0</div><div class="l">spam</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>New lead</h2>
+    <div class="who" id="who">Waiting for the first lead…</div>
+    <div class="meta" id="meta"></div>
+    <div class="msg" id="msg"></div>
+  </section>
+
+  <section class="card">
+    <h2>Claude is thinking and scoring</h2>
+    <div class="stream" id="stream"><span><span id="thinkText" class="think"></span><span id="streamText"></span><span class="cursor"></span></span></div>
+  </section>
+
+  <section class="card">
+    <h2>Result</h2>
+    <div class="result-top"><div class="band" id="band">…</div><div class="score" id="score">–<small> / 100</small></div></div>
+    <div class="reasons" id="reasons"></div>
+    <div class="draft" id="draft"><span class="label">Reply draft for a person to check</span><span id="draftText"></span></div>
+  </section>
+
+  <footer><span>Nothing is sent automatically. A person approves every reply.</span><span>AI Marketing Engine</span></footer>
+
+  <div class="final" id="final">
+    <div class="big" id="finalBig"></div>
+    <div class="sub" id="finalSub"></div>
+    <div class="stats" id="finalStats"></div>
+  </div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  $('date').textContent = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  let t0 = null, tEnd = null, cost = 0, raw = '', think = '';
+  const counts = { hot: 0, warm: 0, cold: 0, spam: 0 };
+  setInterval(() => { if (t0 && !tEnd) $('elapsed').textContent = ((Date.now() - t0) / 1000).toFixed(1); }, 100);
+
+  function partialDraft(text) {
+    const m = text.match(/"reply_draft"\s*:\s*"((?:[^"\\]|\\.)*)/);
+    if (!m) return '';
+    let s = m[1].replace(/\\$/, '');
+    try { return JSON.parse('"' + s + '"'); } catch (e) { return s.replace(/\\n/g, '\n').replace(/\\"/g, '"'); }
+  }
+
+  const es = new EventSource('/events');
+  es.addEventListener('start', e => {
+    const d = JSON.parse(e.data);
+    t0 = Date.now(); $('total').textContent = d.total;
+    if (d.mock) { $('mode').textContent = 'MOCK DRY RUN'; $('mode').classList.add('mock'); }
+  });
+  es.addEventListener('lead_start', e => {
+    const { i, lead } = JSON.parse(e.data);
+    raw = ''; think = ''; $('streamText').textContent = ''; $('thinkText').textContent = '';
+    $('idx').textContent = i + 1;
+    $('who').textContent = `${lead['First Name']} ${lead['Last Name']}`.trim() + (lead['Company Name'] ? ` · ${lead['Company Name']}` : '');
+    $('meta').textContent = [lead['Job Title'], lead['Company Size'] && `${lead['Company Size']} people`, lead['Country']].filter(Boolean).join(' · ');
+    $('msg').textContent = `“${lead['Message']}”`;
+    $('band').className = 'band'; $('band').textContent = 'scoring';
+    $('score').innerHTML = '–<small> / 100</small>';
+    $('reasons').innerHTML = ''; $('draftText').textContent = '';
+  });
+  es.addEventListener('think', e => {
+    const { t } = JSON.parse(e.data);
+    think += t;
+    $('thinkText').textContent = think.slice(-700);
+  });
+  es.addEventListener('delta', e => {
+    const { d } = JSON.parse(e.data);
+    raw += d;
+    $('thinkText').textContent = think ? think.slice(-260) + '\n\n' : '';
+    $('streamText').textContent = raw.slice(-600);
+    $('draftText').textContent = partialDraft(raw);
+  });
+  es.addEventListener('lead_done', e => {
+    const r = JSON.parse(e.data);
+    cost += r.cost; $('cost').textContent = cost.toFixed(4);
+    counts[r.band] = (counts[r.band] || 0) + 1;
+    for (const b of ['hot', 'warm', 'cold', 'spam']) $('c-' + b).textContent = counts[b];
+    $('bar').style.width = `${((r.i + 1) / Number($('total').textContent)) * 100}%`;
+    $('band').className = 'band ' + r.band; $('band').textContent = r.band;
+    $('score').innerHTML = `${r.score}<small> / 100</small>`;
+    $('reasons').innerHTML = '';
+    for (const s of r.signals || []) {
+      const el = document.createElement('span');
+      el.className = 'chip ' + (Number(s.points) > 0 ? 'plus' : 'minus');
+      el.textContent = `${s.signal} ${Number(s.points) > 0 ? '+' : ''}${s.points}`;
+      $('reasons').appendChild(el);
+    }
+    $('draftText').textContent = r.band === 'spam' ? 'Spam, so no reply is drafted and it is not saved.' : (r.replyDraft || '');
+  });
+  es.addEventListener('lead_error', e => {
+    const { error } = JSON.parse(e.data);
+    $('band').className = 'band'; $('band').textContent = 'error'; $('draftText').textContent = error;
+  });
+  es.addEventListener('summary', e => {
+    const s = JSON.parse(e.data);
+    tEnd = Date.now(); $('elapsed').textContent = s.seconds.toFixed(1);
+    setTimeout(() => {
+      $('finalBig').textContent = `${s.ok} leads sorted in ${Math.round(s.seconds)} seconds`;
+      $('finalSub').textContent = `Every lead scored and sorted, replies drafted for the real ones, and nothing sent without a person's OK.`;
+      const stats = [
+        [`$${s.cost.toFixed(3)}`, 'total API cost'],
+        [`${s.bandMatches}/${s.ok}`, 'in the expected band'],
+        [`${(s.bands.hot || 0)}`, 'hot leads flagged'],
+      ];
+      $('finalStats').innerHTML = stats.map(([n, l]) => `<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+      $('final').classList.add('show');
+    }, 2500);
+  });
+</script>
+</body>
+</html>

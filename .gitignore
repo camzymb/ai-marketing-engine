@@ -1,0 +1,29 @@
+# Secrets. Never commit these.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Built locally from your .env and context file (they contain your settings)
+agents/built/
+n8n/lead-loop.json
+
+# Run outputs and recordings
+demo/results*.json
+demo/video-tmp/
+*.webm
+*.mp4
+runs/
+
+# Tools
+node_modules/
+__pycache__/
+.DS_Store
+Thumbs.db
+
+# Demand Engine runs and your own research notes
+demand-engine/runs/
+demand-engine/aeo-probe.json
+demand-engine/evidence/*
+!demand-engine/evidence/template.md
