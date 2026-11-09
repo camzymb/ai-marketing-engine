@@ -250,6 +250,7 @@ connections = {
 
 workflow = {"name": "Lead Loop", "nodes": nodes, "connections": connections,
             "settings": {"executionOrder": "v1"}, "pinData": {}}
+(ROOT / "n8n").mkdir(exist_ok=True)  # git doesn't keep empty folders, so a fresh clone has no n8n/
 (ROOT / "n8n" / "lead-loop.json").write_text(json.dumps(workflow, ensure_ascii=False, indent=2), encoding="utf-8")
 
 # Build every agent prompt with the context file inserted, for the demo and the runner.

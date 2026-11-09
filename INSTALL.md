@@ -22,7 +22,7 @@ This guide sets up the AI Marketing Engine on your own computer. Nothing runs on
 2. **Download the project.**
    ```powershell
    cd $HOME\Documents
-   git clone https://github.com/<your-account>/ai-marketing-engine.git
+   git clone https://github.com/camzymb/ai-marketing-engine.git
    cd ai-marketing-engine
    ```
 3. **Add your settings.**
@@ -51,7 +51,7 @@ This guide sets up the AI Marketing Engine on your own computer. Nothing runs on
 2. **Download the project.**
    ```bash
    cd ~/Documents
-   git clone https://github.com/<your-account>/ai-marketing-engine.git
+   git clone https://github.com/camzymb/ai-marketing-engine.git
    cd ai-marketing-engine
    ```
 3. **Add your settings.**
@@ -83,7 +83,7 @@ This guide sets up the AI Marketing Engine on your own computer. Nothing runs on
    If the version is below 18, install a newer Node.js from nodejs.org or with nvm.
 2. **Download the project.**
    ```bash
-   git clone https://github.com/<your-account>/ai-marketing-engine.git
+   git clone https://github.com/camzymb/ai-marketing-engine.git
    cd ai-marketing-engine
    ```
 3. **Add your settings.**
