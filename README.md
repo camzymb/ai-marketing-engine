@@ -48,6 +48,10 @@ Contact form ─► Prepare lead ─► Lead agent (Haiku 5.5) ─► Read answe
 
 Nothing is sent to a lead automatically. The reply draft waits in HubSpot and in the alert email until a person sends it.
 
+## How the words flow
+
+The SEO agent picks the words buyers search for (from your Search Console export when you add one) and writes page titles and descriptions with them. The AEO and GEO agent asks an AI assistant the questions buyers ask, checks whether you're mentioned, and lists the questions your site should answer. The Content and social agent uses both, so your website, your posts and your captions all use the same words and the same description of your company. That consistency is what helps Google, its AI Overviews and chatbots like ChatGPT describe you correctly. Each month, export the latest searches from Search Console and run the Demand Engine again.
+
 ## The weekly overview
 
 Every Monday, or whenever you click run, a third workflow reads last week's visits by channel from Google Analytics, your searches from Search Console and your new leads from HubSpot. It joins them by channel, so you can see which channels bring the leads that score hot, including visits from AI assistants like ChatGPT and Perplexity. Claude writes a few plain-English sentences on what changed. The overview is saved as a Notion page, and you get an email with the link. It holds counts only, never names or messages. Setup: [docs/weekly-overview-setup.md](docs/weekly-overview-setup.md).

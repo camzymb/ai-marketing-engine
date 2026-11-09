@@ -3,7 +3,8 @@ Order: AEO probe -> Market, Competitor, SEO and AEO agents (in parallel) -> Stra
 Usage:  python demand-engine/run.py          (real run, about $1 to $2 on the Claude API)
         python demand-engine/run.py --dry    (builds every input and prints a cost estimate, calls nothing)
 Reads settings from .env: ANTHROPIC_API_KEY, OWNER_NAME, COMPANY_NAME, CONTEXT_FILE, EVIDENCE_FILE, BRAND_NAMES,
-and optionally AUDIT_FILE and REPORT_FILE (outputs from the Audit and Reporting agents).
+and optionally AUDIT_FILE and REPORT_FILE (outputs from the Audit and Reporting agents) and SEARCH_CONSOLE_FILE
+(Queries.csv exported from Search Console, Performance, Export, so the SEO agent works from real searches).
 """
 import concurrent.futures as cf, datetime, json, os, pathlib, subprocess, sys
 
@@ -27,6 +28,8 @@ ctx = read(cfg.get('CONTEXT_FILE', 'context/example-bycn-studios.md'))
 evidence = read(cfg.get('EVIDENCE_FILE', 'demand-engine/evidence/my-evidence.md'), 'No evidence pack yet. Treat everything outside the context file as unknown.')
 audit = read(cfg.get('AUDIT_FILE', ''), 'No website audit yet.')
 report = read(cfg.get('REPORT_FILE', ''), 'No lead loop report yet.')
+# Real searches from Search Console, if exported. Capped so a big export can't run up the bill.
+searches = read(cfg.get('SEARCH_CONSOLE_FILE', ''), '')[:12000] or 'No Search Console export yet. Volumes are unknown.'
 rules = (D / 'prompts' / '_rules.md').read_text(encoding='utf-8')
 owner, company = cfg.get('OWNER_NAME', 'the owner'), cfg.get('COMPANY_NAME', 'the company')
 today = datetime.date.today().strftime('%d %B %Y')
@@ -57,7 +60,7 @@ probe = (RUN / 'aeo-probe.json').read_text(encoding='utf-8') if (RUN / 'aeo-prob
 d = f'Today is {today}.'
 build('market', 'claude-sonnet-5-5', f'{d} Research the market using this evidence pack.\n\n{evidence}')
 build('competitor', 'claude-sonnet-5-5', f'{d} Compare the company with its alternatives using this evidence pack.\n\n{evidence}')
-build('seo', 'claude-sonnet-5-5', f'{d} Plan SEO using the evidence pack and the website audit.\n\n# Evidence pack\n\n{evidence}\n\n# Website audit\n\n{audit}', 24000)
+build('seo', 'claude-sonnet-5-5', f'{d} Plan SEO using the evidence pack, the website audit and the real searches from Search Console.\n\n# Evidence pack\n\n{evidence}\n\n# Website audit\n\n{audit}\n\n# Search Console queries\n\n{searches}', 24000)
 build('aeo', 'claude-sonnet-5-5', f'{d} Plan AEO and GEO. Here is the probe of Claude\'s answers (JSON), then the evidence pack.\n\n# Probe\n\n{probe}\n\n# Evidence pack\n\n{evidence}')
 with cf.ThreadPoolExecutor(4) as ex: list(ex.map(run, ['market', 'competitor', 'seo', 'aeo']))
 
@@ -66,7 +69,7 @@ build('strategist', 'claude-opus-5-5', f'{d} Write the 30-day demand plan starti
 run('strategist')
 
 plan = out('strategist')
-build('social', 'claude-sonnet-5-5', f'{d} Write the two-week LinkedIn plan from this strategy.\n\n# Strategy\n\n{plan}\n\n# Evidence pack\n\n{evidence}')
+build('social', 'claude-sonnet-5-5', f'{d} Write the two-week LinkedIn plan from this strategy, using the SEO agent\'s words to use and the buyer questions from the AEO and GEO plan.\n\n# Strategy\n\n{plan}\n\n# SEO plan and words to use\n\n{out("seo")}\n\n# AEO and GEO plan\n\n{out("aeo")}\n\n# Evidence pack\n\n{evidence}')
 build('outbound', 'claude-sonnet-5-5', f'{d} Prepare one-to-one outreach from this strategy and market research.\n\n# Strategy\n\n{plan}\n\n# Market research\n\n{out("market")}')
 with cf.ThreadPoolExecutor(2) as ex: list(ex.map(run, ['social', 'outbound']))
 
