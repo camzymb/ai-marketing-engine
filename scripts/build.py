@@ -22,6 +22,7 @@ OWNER = cfg.get("OWNER_NAME") or "the owner"
 SIGNATURE = cfg.get("SIGNATURE") or OWNER
 COMPANY = cfg.get("COMPANY_NAME") or "us"
 ALERT_EMAIL = cfg.get("ALERT_EMAIL") or "you@example.com"
+MINIMAL_ALERT = (cfg.get("ALERT_DETAILS") or "").lower() == "minimal"  # keep lead details out of the alert email
 CONTEXT_FILE = ROOT / (cfg.get("CONTEXT_FILE") or "context/example-bycn-studios.md")
 context = CONTEXT_FILE.read_text(encoding="utf-8")
 HERE = ROOT
@@ -131,6 +132,9 @@ alert_text = (
     f"Voice check: {{{{ {R}.voiceFlags }}}}\n"
 )
 
+if MINIMAL_ALERT:
+    alert_text = f"=A hot lead just came in with a score of {{{{ {R}.score }}}}.\n\nOpen HubSpot to read the lead, the summary and the reply draft.\n"
+
 def nid():
     return str(uuid.uuid4())
 
@@ -224,7 +228,7 @@ nodes = [
          "resource": "message",
          "operation": "send",
          "sendTo": ALERT_EMAIL,
-         "subject": "=Hot lead: {{ " + R + ".firstName }} {{ " + R + ".lastName }}, {{ " + R + ".company }} (score {{ " + R + ".score }})",
+         "subject": ("=Hot lead (score {{ " + R + ".score }})" if MINIMAL_ALERT else "=Hot lead: {{ " + R + ".firstName }} {{ " + R + ".lastName }}, {{ " + R + ".company }} (score {{ " + R + ".score }})"),
          "emailType": "text",
          "message": alert_text,
          "options": {"appendAttribution": False},

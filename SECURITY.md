@@ -17,6 +17,8 @@ This project calls paid APIs and handles other people's contact details, so a fe
 3. Keep GitHub **push protection** on. It's on by default for public repositories and blocks pushes that contain known key formats.
 4. Hide your email in commits. In GitHub, go to **Settings → Emails** and tick **Keep my email addresses private** and **Block command line pushes that expose my email**. Then set your local git email to the `@users.noreply.github.com` address GitHub shows you.
 
+Check twice when an AI assistant helped write the code. GitGuardian's 2026 report found that commits made with Claude Code's help leaked secrets more often than average (3.2% against 1.5%), though the person pushing still decides what goes out. GitHub also scans public repos for known key formats, and Anthropic switches off any Claude key it finds that way and emails you. That's a safety net, not a plan.
+
 Deleting a file in a new commit does **not** remove it from the history. Scanners and forks can still read old commits, so a key that was ever pushed must be treated as leaked.
 
 ## 3. If a key leaks
@@ -35,7 +37,8 @@ Deleting a file in a new commit does **not** remove it from the history. Scanner
 | **Too much power for the AI** (excessive agency) | An agent sends emails or changes records on its own | No agent can send, post, buy or delete. They only draft. n8n writes to HubSpot with a contacts-only key, and alerts go only to you. |
 | **Leaking private data in prompts** | Customer data ends up in logs, prompts or the repo | Agents get one lead at a time and keep nothing between runs. Test leads use `example.com`, a domain reserved for examples. Run outputs are git-ignored. |
 | **Local demo exposed** | Someone on your network reads files through the demo server | The demo server listens only on `127.0.0.1` and serves only the dashboard page. |
-| **Supply chain** | A malicious package sneaks in | The scripts use only Node and Python built-ins, so there are no packages to install. Playwright is needed only to record videos. |
+| **Supply chain** | A malicious package sneaks in, or an AI suggests a package name that doesn't exist and an attacker registers it | The scripts use only Node and Python built-ins, so there are no packages to install. Playwright is needed only to record videos. Before you add a package, check that it's real and well used. |
+| **Open webhooks** | Anyone who finds your n8n webhook URL can trigger it | Turn on webhook authentication (Basic, Header or JWT) where the trigger allows it. If you self-host n8n, keep it updated, since older versions had serious security holes, for example CVE-2026-21858, fixed in 1.121.0. |
 
 ## 5. Reporting a problem
 
@@ -46,3 +49,6 @@ If you find a security issue in this project, please open a private advisory on 
 - OWASP Top 10 for LLM Applications 2025: genai.owasp.org
 - OWASP API Security Top 10 2023: owasp.org/API-Security
 - GitHub Docs: "About push protection" and "Removing sensitive data from a repository"
+- GitGuardian, The State of Secrets Sprawl 2026: blog.gitguardian.com/the-state-of-secrets-sprawl-2026
+- Anthropic, API key best practices: support.claude.com/en/articles/9767949
+- n8n docs, Webhook node: docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook

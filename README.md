@@ -4,7 +4,7 @@ Two connected teams of Claude agents for small B2B companies. The **Demand Engin
 
 Built by Camille Nicole Brattli ([bycamillenicole.com](https://bycamillenicole.com)). First tested on her own studio, BYCN.studios, as "client zero".
 
-> **Status:** prototype, November 2026. It works end to end on test data. Expect rough edges.
+> **Status:** prototype, November 2026. It works end to end on test data, but it isn't production software. It's shared as-is under the MIT license, with no warranty. n8n itself has its own Sustainable Use License. This repo only contains a workflow file that you import into your own n8n.
 
 ## Part 1: the Lead Loop and helper agents
 
