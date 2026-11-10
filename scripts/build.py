@@ -557,6 +557,8 @@ const table = (head, body) => ({ object: 'block', type: 'table', table: {
 } });
 
 const T = f.totals;
+// "1 visit", "2 visits": the word follows the number.
+const count = (n, word) => `${n} ${Number(n) === 1 ? word : word + 's'}`;
 const blocks = [];
 for (const p of summary.split(/\n\s*\n/)) blocks.push(para(p.trim()));
 blocks.push(h2('Visits and leads by channel'));
@@ -568,10 +570,10 @@ if (f.channels.length) {
   ));
 } else blocks.push(para('No visits or leads were recorded this week.'));
 blocks.push(h2('From AI assistants'));
-blocks.push(para(`${f.aiAssistants.visits} visits and ${f.aiAssistants.leads} leads came from AI assistants like ChatGPT, Claude, Perplexity and Gemini, and ${f.aiAssistants.hot} of those leads were hot.`));
+blocks.push(para(`${count(f.aiAssistants.visits, 'visit')} and ${count(f.aiAssistants.leads, 'lead')} came from AI assistants like ChatGPT, Claude, Perplexity and Gemini, and ${f.aiAssistants.hot} of those leads ${Number(f.aiAssistants.hot) === 1 ? 'was' : 'were'} hot.`));
 blocks.push(h2('Google searches'));
 if (f.search) {
-  blocks.push(para(`From ${f.search.from} to ${f.search.to}, the site showed up ${f.search.impressions} times in Google and got ${f.search.clicks} clicks, at an average position of ${f.search.position}.`));
+  blocks.push(para(`From ${f.search.from} to ${f.search.to}, the site showed up ${count(f.search.impressions, 'time')} in Google and got ${count(f.search.clicks, 'click')}, at an average position of ${f.search.position}.`));
   if (f.topSearches.length) blocks.push(table(['Search', 'Clicks', 'Shown', 'Position'], f.topSearches.map((q) => [q.query, q.clicks, q.impressions, q.position])));
 } else blocks.push(para('Search Console is not connected yet.'));
 if (f.risingSearches.length) {
@@ -586,7 +588,7 @@ if (words.length) {
 } else blocks.push(para('No word ideas this week. They need search data from Search Console or a Demand Engine plan.'));
 if (f.topPages.length) {
   blocks.push(h2('Pages people landed on'));
-  for (const p of f.topPages) blocks.push(bullet(`${p.page}: ${p.visits} visits`));
+  for (const p of f.topPages) blocks.push(bullet(`${p.page}: ${count(p.visits, 'visit')}`));
 }
 if (f.notes.length) {
   blocks.push(h2('Missing this week'));
@@ -611,7 +613,7 @@ ${words.length ? `<p style="margin:16px 0 6px"><b>Words for this week</b></p><ul
 <p><a href="%NOTION_URL%">Open the full overview in Notion</a></p>
 <p style="font-size:13px;color:#6b655c">Or go straight to <a href="${f.links.hubspot}">HubSpot</a>, <a href="${f.links.ga4}">Google Analytics</a> or <a href="${f.links.searchConsole}">Search Console</a>.</p>
 </div>`;
-return [{ json: { notion, emailHtml, subject: `Your week: ${T.visits} visits, ${T.leads} leads, ${T.hot} hot (${f.title})` } }];
+return [{ json: { notion, emailHtml, subject: `Your week: ${count(T.visits, 'visit')}, ${count(T.leads, 'lead')}, ${T.hot} hot (${f.title})` } }];
 """.replace("__DB__", json.dumps(NOTION_DATABASE_ID)).replace("__PLAN_WORDS__", json.dumps(PLAN_WORDS)).replace("__PLAN_WORDS_DATE__", json.dumps(PLAN_WORDS_DATE)).replace("__PLAN_QUESTIONS__", json.dumps(PLAN_QUESTIONS)).replace("__PLAN_QUESTIONS_DATE__", json.dumps(PLAN_QUESTIONS_DATE))
 
 google_http = lambda name, pos, url, body: {
